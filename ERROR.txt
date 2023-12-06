@@ -1,0 +1,5 @@
+UnicodeEncodeError: 'latin-1' codec can't encode character '\u2022' in position 106: ordinal not in range(256)
+*** You may need to add PYTHONIOENCODING=utf-8 to your environment ***
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+
