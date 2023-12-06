@@ -59,7 +59,7 @@ def read_itckul_building(
     """
     # List the object-wise annotation files in the room
     room_directories = sorted(
-        [x for x in glob.glob(osp.join(area_dir, '*')) if osp.isdir(x)])
+        [x for x in glob.glob(osp.join(building_dir, '*')) if osp.isdir(x)])
 
     # Read all parts in the Building and concatenate point clouds in a Batch
     processes = available_cpu_count() if processes < 1 else processes
@@ -186,7 +186,7 @@ class ITCKUL(BaseDataset):
 
     def __init__(self, *args, fold=5, **kwargs):
         self.fold = fold
-        super().__init__(*args, val_mixed_in_train=True, **kwargs)
+        super().__init__(*args, val_mixed_in_train=True, test_mixed_in_val=True, **kwargs)
 
     @property
     def class_names(self):
@@ -214,18 +214,20 @@ class ITCKUL(BaseDataset):
         The following structure is expected:
             `{'train': [...], 'val': [...], 'test': [...]}`
         """
+        # TODO!
         return {
-            'train': [f'Area_{i}' for i in range(1, 7) if i != self.fold],
-            'val': [f'Area_{i}' for i in range(1, 7) if i != self.fold],
-            'test': [f'Area_{self.fold}']}
+            'train': ['ITC_BUILDING'],
+            'val': ['ITC_BUILDING'],
+            'test': ['ITC_BUILDING']}
 
     def download_dataset(self):
         # Manually download the dataset
         if not osp.exists(osp.join(self.root, self._zip_name)):
             log.error(
-                f"\nnot support automatic download.\n")
-            sys.exit(1)
-
+                f"\nNot supported: automatic download.\n File missing:"+ osp.join(self.root, self._zip_name)+"\n Continue run...\n")
+            return
+            #sys.exit(1)
+            
         # Unzip the file and rename it into the `root/raw/` directory. This
         # directory contains the raw Area folders from the zip
         extract_zip(osp.join(self.root, self._zip_name), self.root)
@@ -236,18 +238,21 @@ class ITCKUL(BaseDataset):
         """Read a single raw cloud and return a Data object, ready to
         be passed to `self.pre_transform`.
         """
-        return read_itckul_area(
+        return read_itckul_building(
             raw_cloud_path, xyz=True, rgb=True, semantic=True, instance=False,
             xyz_room=True, align=False, is_val=True, verbose=False)
 
-    @property
-    def raw_file_structure(self):
-        return f"""
-    {self.root}/
-        └── {self._zip_name}
-        └── raw/
-                └── ...
-            """
+# This is optional
+#    @property
+#    def raw_file_structure(self):
+#        return f"""
+#    {self.root}/
+#        └── {self._zip_name}
+#        └── raw/
+#            └── ITC_BUILDING
+#                └── 2019
+#                    └── ...
+#            """
 
     @property
     def raw_file_names(self):
