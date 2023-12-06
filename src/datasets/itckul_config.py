@@ -7,11 +7,9 @@ import os.path as osp
 
 # Credit: https://github.com/torch-points3d/torch-points3d
 
-#FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLScDimvNMCGhy_rmBA2gHfDu3naktRm6A8BPwAWWDv-Uhm6Shw/viewform?c=0&w=1"
-#ZIP_NAME = "Stanford3dDataset_v1.2.zip"
-#ALIGNED_ZIP_NAME = "Stanford3dDataset_v1.2_Aligned_Version.zip"
-#UNZIP_NAME = "Stanford3dDataset_v1.2"
-#ALIGNED_UNZIP_NAME = "Stanford3dDataset_v1.2_Aligned_Version"
+FORM_URL = "https://docs.google.com"
+ZIP_NAME = "ITC-KUL_Constructor_v1.1.zip"
+UNZIP_NAME = "ITC-KUL_Constructor_v1.1"
 
 
 ########################################################################
@@ -43,7 +41,7 @@ EPOCHS = {
 
 # Credit: https://github.com/torch-points3d/torch-points3d
 
-ITCKUL_NUM_CLASSES = 100
+ITCKUL_NUM_CLASSES = 21
 
 INV_OBJECT_LABEL = {
     0: "structural",

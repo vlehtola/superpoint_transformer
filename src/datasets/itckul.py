@@ -121,14 +121,17 @@ def read_itckul_epoch(
     y_list = [] if semantic else None
     o_list = [] if instance else None
 
+    lasfiles = sorted(glob.glob(osp.join(room_dir, '*.las')))
+    lasfilename = lasfiles[0] # assume only one las file
+
     # List the object-wise annotation files in the epoch
     with laspy.open(lasfilename) as fh:
-	las = fh.read()
-    	tmp = las.header.vlrs[0]
-    	print('Points from Header:', fh.header.point_count, 'Extra dimensions:', tmp.extra_bytes_structs)
-	# NOTE: extra dimensions are accessible through their field names
-    	o_list= las.object_labels if instance else None
-	y_list= las.segmentation_labels if semantic else None
+        las = fh.read()
+        tmp = las.header.vlrs[0]
+        print('Points from Header:', fh.header.point_count, 'Extra dimensions:', tmp.extra_bytes_structs)
+        # NOTE: extra dimensions are accessible through their field names
+        o_list= las.object_labels if instance else None
+        y_list= las.segmentation_labels if semantic else None
         xyz_list = las.points if xyz else None
 
     # Concatenate and convert to torch
@@ -179,7 +182,6 @@ class ITCKUL(BaseDataset):
 
     _form_url = FORM_URL
     _zip_name = ZIP_NAME
-    _aligned_zip_name = ALIGNED_ZIP_NAME
     _unzip_name = UNZIP_NAME
 
     def __init__(self, *args, fold=5, **kwargs):
@@ -221,7 +223,7 @@ class ITCKUL(BaseDataset):
         # Manually download the dataset
         if not osp.exists(osp.join(self.root, self._zip_name)):
             log.error(
-                f"\nnot support automatic download.\n"
+                f"\nnot support automatic download.\n")
             sys.exit(1)
 
         # Unzip the file and rename it into the `root/raw/` directory. This
@@ -265,30 +267,3 @@ class ITCKUL(BaseDataset):
         return self.id_to_base_id(id)
 
 
-########################################################################
-#                              MiniS3DIS                               #
-########################################################################
-
-class MiniS3DIS(S3DIS):
-    """A mini version of S3DIS with only 2 areas per stage for
-    experimentation.
-    """
-    _NUM_MINI = 1
-
-    @property
-    def all_cloud_ids(self):
-        return {k: v[:self._NUM_MINI] for k, v in super().all_cloud_ids.items()}
-
-    @property
-    def data_subdir_name(self):
-        return self.__class__.__bases__[0].__name__.lower()
-
-    # We have to include this method, otherwise the parent class skips
-    # processing
-    def process(self):
-        super().process()
-
-    # We have to include this method, otherwise the parent class skips
-    # processing
-    def download(self):
-        super().download()
