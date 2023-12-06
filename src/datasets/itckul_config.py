@@ -8,8 +8,8 @@ import os.path as osp
 # Credit: https://github.com/torch-points3d/torch-points3d
 
 FORM_URL = "https://docs.google.com"
-ZIP_NAME = "ITC-KUL_Constructor_v1.1.zip"
-UNZIP_NAME = "ITC-KUL_Constructor_v1.1"
+ZIP_NAME = "ITC-KUL constructor.zip"
+UNZIP_NAME = "ITC-KUL constructor"
 
 
 ########################################################################
@@ -23,9 +23,9 @@ VALIDATION_EPOCHS = [
     "WEEK17"]
 
 EPOCHS = {
-    "ITC_BUILDING": [
-        "2019",
-        "2021"],
+    #"ITC_BUILDING": [
+    #    "2019",
+    #    "2021"],
        # "2022",
        # "2023"],
     "KUL_BUILDING": [

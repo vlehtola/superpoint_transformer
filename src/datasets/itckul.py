@@ -57,13 +57,13 @@ def read_itckul_building(
     :return:
         Batch of accumulated points clouds
     """
-    # List the object-wise annotation files in the room
-    room_directories = sorted(
-        [x for x in glob.glob(osp.join(building_dir, '*')) if osp.isdir(x)])
+    # List the object-wise las files in subfolders
+    directories = sorted(
+        [x for x in glob.glob(osp.join(building_dir, '*/PC*')) if osp.isdir(x)])
 
-    # Read all parts in the Building and concatenate point clouds in a Batch
+    # Read all epochs of the Building and concatenate point clouds in a Batch (TODO: check if this makes sense!)
     processes = available_cpu_count() if processes < 1 else processes
-    args_iter = [[r] for r in room_directories]
+    args_iter = [[r] for r in directories]
     kwargs_iter = {
         'xyz': xyz, 'rgb': rgb, 'semantic': semantic, 'instance': instance,
         'xyz_room': xyz_room, 'align': align, 'is_val': is_val,
@@ -121,7 +121,10 @@ def read_itckul_epoch(
     y_list = [] if semantic else None
     o_list = [] if instance else None
 
-    lasfiles = sorted(glob.glob(osp.join(room_dir, '*.las')))
+    lasfiles = sorted(glob.glob(osp.join(epoch_dir, 'PC*/*.las')))
+    if(len(lasfiles) == 0):
+    	log.error(f"Error: {epoch_dir}, no las files")
+    	sys.exit(1)
     lasfilename = lasfiles[0] # assume only one las file
 
     # List the object-wise annotation files in the epoch
