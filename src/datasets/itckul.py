@@ -27,8 +27,8 @@ __all__ = ['ITCKUL']
 ########################################################################
 
 def read_itckul_building(
-        building_dir, xyz=True, rgb=True, semantic=True, instance=False,
-        xyz_room=False, align=False, is_val=True, verbose=False, processes=-1):
+        building_dir, xyz=True, rgb=True, semantic=True, instance=True,
+        verbose=True, processes=-1):
     """Read all ITCKUL object-wise annotations in a given building directory.
     All building-wise data from one epoch are accumulated into a single cloud.
 
@@ -42,13 +42,6 @@ def read_itckul_building(
         Whether semantic labels should be saved in the output Data.y
     :param instance: bool
         Whether instance labels should be saved in the output Data.y
-    :param xyz_room: bool
-        Whether the canonical room coordinates should be saved in the
-        output Data.pos_room, as defined in the S3DIS paper section 3.2:
-        https://openaccess.thecvf.com/content_cvpr_2016/papers/Armeni_3D_Semantic_Parsing_CVPR_2016_paper.pdf
-    :param is_val: bool
-        Whether the output `Batch.is_val` should carry a boolean label
-        indicating whether they belong to the Area validation split
     :param verbose: bool
         Verbosity
     :param processes: int
@@ -57,16 +50,18 @@ def read_itckul_building(
     :return:
         Batch of accumulated points clouds
     """
-    # List the object-wise las files in subfolders
-    directories = sorted(
-        [x for x in glob.glob(osp.join(building_dir, '*/PC*')) if osp.isdir(x)])
+    # List the object-wise las files in subfolders ## TODO: temporary, only KUL
+    epoch_dir = building_dir.split('/')[-1]
+    search_dir = osp.join(building_dir, '../*BUILDING', epoch_dir, 'PC*')
+    directories = sorted([x for x in glob.glob(search_dir) if osp.isdir(x)])
 
     # Read all epochs of the Building and concatenate point clouds in a Batch (TODO: check if this makes sense!)
+    print('Directories', directories) #debug
+    print('building dir', building_dir, 'Search dir:', search_dir) #debug
     processes = available_cpu_count() if processes < 1 else processes
     args_iter = [[r] for r in directories]
     kwargs_iter = {
         'xyz': xyz, 'rgb': rgb, 'semantic': semantic, 'instance': instance,
-        'xyz_room': xyz_room, 'align': align, 'is_val': is_val,
         'verbose': verbose}
     batch = Batch.from_data_list(starmap_with_kwargs(
         read_itckul_epoch, args_iter, kwargs_iter, processes=processes))
@@ -82,7 +77,7 @@ def read_itckul_building(
 
 def read_itckul_epoch(
         epoch_dir, xyz=True, rgb=True, semantic=True, instance=False,
-        xyz_room=False, align=False, is_val=True, verbose=False):
+        verbose=False):
     """Read all object-wise annotations in a given epoch directory.
 
     :param epoch_dir: str
@@ -96,17 +91,6 @@ def read_itckul_epoch(
         Whether semantic labels should be saved in the output `Data.y`
     :param instance: bool
         Whether instance labels should be saved in the output `Data.y`
-    :param xyz_room: bool
-        Whether the canonical room coordinates should be saved in the
-        output Data.pos_room, as defined in the S3DIS paper section 3.2:
-        https://openaccess.thecvf.com/content_cvpr_2016/papers/Armeni_3D_Semantic_Parsing_CVPR_2016_paper.pdf
-    :param align: bool
-        Whether the room should be rotated to its canonical orientation,
-        as defined in the S3DIS paper section 3.2:
-        https://openaccess.thecvf.com/content_cvpr_2016/papers/Armeni_3D_Semantic_Parsing_CVPR_2016_paper.pdf
-    :param is_val: bool
-        Whether the output `Data.is_val` should carry a boolean label
-        indicating whether they belong to their Area validation split
     :param verbose: bool
         Verbosity
     :return: Data
@@ -121,11 +105,11 @@ def read_itckul_epoch(
     y_list = [] if semantic else None
     o_list = [] if instance else None
 
-    lasfiles = sorted(glob.glob(osp.join(epoch_dir, 'PC*/*.las')))
+    lasfiles = sorted(glob.glob(osp.join(epoch_dir, '*.las')))
     if(len(lasfiles) == 0):
     	log.error(f"Error: {epoch_dir}, no las files")
     	sys.exit(1)
-    lasfilename = lasfiles[0] # assume only one las file
+    lasfilename = lasfiles[0] # assume only one las file, TODO
 
     # List the object-wise annotation files in the epoch
     with laspy.open(lasfilename) as fh:
@@ -147,11 +131,6 @@ def read_itckul_epoch(
 
     # Store into a Data object
     data = Data(pos=xyz_data, rgb=rgb_data, y=y_data, o=o_data)
-
-    # Add is_val attribute if need be
-    if is_val:
-        data.is_val = torch.ones(data.num_nodes, dtype=torch.bool) * (
-                osp.basename(epoch_dir) in VALIDATION_EPOCHS)
 
     return data
 
@@ -217,20 +196,21 @@ class ITCKUL(BaseDataset):
         The following structure is expected:
             `{'train': [...], 'val': [...], 'test': [...]}`
         """
-        # TODO!
+        # TODO! these set also the main directories for computation
         return {
-            'train': ['ITC_BUILDING'],
-            'val': ['ITC_BUILDING'],
-            'test': ['ITC_BUILDING']}
+            'train': ['WEEK22'],
+            'val': ['WEEK18'],
+            'test': ['WEEK17']}
 
     def download_dataset(self):
         # Manually download the dataset
         if not osp.exists(osp.join(self.root, self._zip_name)):
             log.error(
                 f"\nNot supported: automatic download.\n File missing:"+ osp.join(self.root, self._zip_name)+"\n Continue run...\n")
-            return
-            #sys.exit(1)
+            sys.exit(1)
             
+        print("skip extracting..")
+        return
         # Unzip the file and rename it into the `root/raw/` directory. This
         # directory contains the raw Area folders from the zip
         extract_zip(osp.join(self.root, self._zip_name), self.root)
@@ -242,8 +222,8 @@ class ITCKUL(BaseDataset):
         be passed to `self.pre_transform`.
         """
         return read_itckul_building(
-            raw_cloud_path, xyz=True, rgb=True, semantic=True, instance=False,
-            xyz_room=True, align=False, is_val=True, verbose=False)
+            raw_cloud_path, xyz=True, rgb=True, semantic=True, instance=True,
+            verbose=True)
 
 # This is optional
 #    @property
