@@ -246,8 +246,6 @@ class ITCKUL(BaseDataset):
     {self.root}/
         └── {self._zip_name}
         └── raw/
-            └── Area_{{i_area:1>6}}/
-                └── Area_{{i_area:1>6}}_alignmentAngle.txt
                 └── ...
             """
 
@@ -255,9 +253,7 @@ class ITCKUL(BaseDataset):
     def raw_file_names(self):
         """The file paths to find in order to skip the download."""
         area_folders = super().raw_file_names
-        alignment_files = [
-            osp.join(a, f"{a}_alignmentAngle.txt") for a in area_folders]
-        return area_folders + alignment_files
+        return area_folders
 
     def id_to_relative_raw_path(self, id):
         """Given a cloud id as stored in `self.cloud_ids`, return the
