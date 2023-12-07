@@ -27,7 +27,7 @@ __all__ = ['ITCKUL']
 ########################################################################
 
 def read_itckul_building(
-        building_dir, xyz=True, rgb=True, semantic=True, instance=True,
+        input_dir, xyz=True, rgb=True, semantic=True, instance=True,
         verbose=True, processes=-1):
     """Read all ITCKUL object-wise annotations in a given building directory.
     All building-wise data from one epoch are accumulated into a single cloud.
@@ -51,13 +51,16 @@ def read_itckul_building(
         Batch of accumulated points clouds
     """
     # List the object-wise las files in subfolders ## TODO: temporary, only KUL
-    epoch_dir = building_dir.split('/')[-1]
-    search_dir = osp.join(building_dir, '../*BUILDING', epoch_dir, 'PC*')
+    dir_split = input_dir.split('/')
+    epoch_dir = dir_split[-1]
+    building_dir = EPOCHS[epoch_dir]    
+    base_dir = '/'.join(dir_split[0:-1])
+    search_dir = osp.join(base_dir, building_dir, epoch_dir, 'PC*')
     directories = sorted([x for x in glob.glob(search_dir) if osp.isdir(x)])
 
     # Read all epochs of the Building and concatenate point clouds in a Batch (TODO: check if this makes sense!)
     print('Directories', directories) #debug
-    print('building dir', building_dir, 'Search dir:', search_dir) #debug
+    #print('building dir', building_dir, 'Search dir:', search_dir) #debug
     processes = available_cpu_count() if processes < 1 else processes
     args_iter = [[r] for r in directories]
     kwargs_iter = {
@@ -198,9 +201,9 @@ class ITCKUL(BaseDataset):
         """
         # TODO! these set also the main directories for computation
         return {
-            'train': ['WEEK22'],
-            'val': ['WEEK18'],
-            'test': ['WEEK17']}
+            'train': TRAIN_EPOCHS,
+            'val': VALIDATION_EPOCHS,
+            'test': TEST_EPOCHS}
 
     def download_dataset(self):
         # Manually download the dataset
