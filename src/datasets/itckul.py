@@ -79,7 +79,7 @@ def read_itckul_building(
 
 
 def read_itckul_epoch(
-        epoch_dir, xyz=True, rgb=True, semantic=True, instance=False,
+        epoch_dir, xyz=True, rgb=True, semantic=True, instance=True,
         verbose=False):
     """Read all object-wise annotations in a given epoch directory.
 
@@ -122,7 +122,13 @@ def read_itckul_epoch(
         # NOTE: extra dimensions are accessible through their field names
         o_list= las.object_labels if instance else None
         y_list= las.segmentation_labels if semantic else None
-        xyz_list = las.points if xyz else None
+        xyz_list = las.xyz.copy() if xyz else None
+        if rgb:
+            rgb_list = [ las.red, las.green, las.blue ]
+            rgb_list = np.array(rgb_list).transpose()
+            rgb_list >>= 8  # 8 bit shift to right to correct color values # try *256 / 65500?
+		# TypeError: can't convert np.ndarray of type numpy.uint16. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint8, and bool.
+
 
     # Concatenate and convert to torch
     xyz_data = torch.from_numpy(np.concatenate(xyz_list, 0)) if xyz else None
