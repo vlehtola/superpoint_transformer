@@ -138,8 +138,7 @@ def read_itckul_epoch(
     y_data = torch.from_numpy(y_list) if semantic else None
     o_data = torch.from_numpy(o_list) if instance else None
 
-    y_data = y_data.clamp(min=1)
-    o_data = o_data.clamp(min=1)
+    y_data = y_data.clamp(max=ITCKUL_NUM_CLASSES)
     print("sizes:", xyz_data.size(), rgb_data.size(), y_data.size(), o_data.size()) 
     # Store into a Data object
     data = Data(pos=xyz_data, rgb=rgb_data, y=y_data, o=o_data)
