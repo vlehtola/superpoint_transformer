@@ -120,8 +120,8 @@ def read_itckul_epoch(
         tmp = las.header.vlrs[0]
         #print('Points from Header:', fh.header.point_count, 'Extra dimensions:', tmp.extra_bytes_structs)
         # NOTE: extra dimensions are accessible through their field names
-        o_list= las.object_labels.copy() if instance else None
-        y_list= las.segmentation_labels.copy() if semantic else None
+        o_list= np.array(las.object_labels.copy(), dtype='int64') if instance else None
+        y_list= np.array(las.segmentation_labels.copy(), dtype='int64') if semantic else None
         if xyz:
             xyz_list.append(np.ascontiguousarray(las.xyz, dtype='float32'))
         if rgb:
@@ -138,8 +138,8 @@ def read_itckul_epoch(
     y_data = torch.from_numpy(y_list) if semantic else None
     o_data = torch.from_numpy(o_list) if instance else None
 
-    #y_data = y_data.clamp(min=0)
-    #o_data = o_data.clamp(min=0)
+    y_data = y_data.clamp(min=1)
+    o_data = o_data.clamp(min=1)
     print("sizes:", xyz_data.size(), rgb_data.size(), y_data.size(), o_data.size()) 
     # Store into a Data object
     data = Data(pos=xyz_data, rgb=rgb_data, y=y_data, o=o_data)

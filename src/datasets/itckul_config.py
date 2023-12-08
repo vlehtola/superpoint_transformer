@@ -43,7 +43,7 @@ EPOCHS = {
 
 # Credit: https://github.com/torch-points3d/torch-points3d
 
-ITCKUL_NUM_CLASSES = 21
+ITCKUL_NUM_CLASSES = 100
 
 INV_OBJECT_LABEL = {
     0: "structural",
