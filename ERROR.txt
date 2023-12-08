@@ -3,3 +3,9 @@ UnicodeEncodeError: 'latin-1' codec can't encode character '\u2022' in position 
 
 Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
 
+
+    return torch.ops.torch_cluster.grid(pos, size, start, end)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~ <--- HERE
+RuntimeError: size.numel() == pos.size(1) INTERNAL ASSERT FAILED at "csrc/cuda/grid_cuda.cu":42, please report a bug to PyTorch. Input mismatch
+
+In any case, check what [pos] is and make sure its size(1) matches the number of elements in kernel_size.

@@ -118,29 +118,31 @@ def read_itckul_epoch(
     with laspy.open(lasfilename) as fh:
         las = fh.read()
         tmp = las.header.vlrs[0]
-        print('Points from Header:', fh.header.point_count, 'Extra dimensions:', tmp.extra_bytes_structs)
+        #print('Points from Header:', fh.header.point_count, 'Extra dimensions:', tmp.extra_bytes_structs)
         # NOTE: extra dimensions are accessible through their field names
         o_list= las.object_labels.copy() if instance else None
         y_list= las.segmentation_labels.copy() if semantic else None
-        print('ylist', y_list)
-        xyz_list = las.xyz.copy() if xyz else None
+        if xyz:
+            xyz_list.append(np.ascontiguousarray(las.xyz, dtype='float32'))
         if rgb:
-            rgb_list = [ las.red, las.green, las.blue ]
-            rgb_list = np.array(rgb_list).transpose()
-            rgb_list >>= 8  # 8 bit shift to right to correct color values
-            rgb_list = np.int16(rgb_list)
+            rgbVal = np.ascontiguousarray([ las.red.copy(), las.green.copy(), las.blue.copy() ])
+            rgbVal = rgbVal.transpose()
+            rgbVal >>= 8  # 8 bit shift to right to correct color values from LAS
+            rgb_list.append( np.array(rgbVal, dtype='int16'))
             # TypeError: can't convert np.ndarray of type numpy.uint16. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint8, and bool.
 
 
     # Concatenate and convert to torch
     xyz_data = torch.from_numpy(np.concatenate(xyz_list, 0)) if xyz else None
-    rgb_data = to_float_rgb(torch.from_numpy(np.concatenate(rgb_list, 0))) \
-        if rgb else None
-    y_data = y_list if semantic else None
-    o_data = o_list if instance else None
+    rgb_data = to_float_rgb(torch.from_numpy(np.concatenate(rgb_list, 0))) if rgb else None
+    y_data = torch.from_numpy(y_list) if semantic else None
+    o_data = torch.from_numpy(o_list) if instance else None
+
+    #y_data = y_data.clamp(min=0)
+    #o_data = o_data.clamp(min=0)
+    print("sizes:", xyz_data.size(), rgb_data.size(), y_data.size(), o_data.size()) 
     # Store into a Data object
     data = Data(pos=xyz_data, rgb=rgb_data, y=y_data, o=o_data)
-
     return data
 
 
@@ -205,7 +207,7 @@ class ITCKUL(BaseDataset):
         The following structure is expected:
             `{'train': [...], 'val': [...], 'test': [...]}`
         """
-        # TODO! these set also the main directories for computation
+        # Note! these set also the main directories for computation
         return {
             'train': TRAIN_EPOCHS,
             'val': VALIDATION_EPOCHS,
