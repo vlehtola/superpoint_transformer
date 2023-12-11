@@ -28,7 +28,7 @@ __all__ = ['ITCKUL']
 
 def read_itckul_building(
         input_dir, xyz=True, rgb=True, semantic=True, instance=True,
-        verbose=True, processes=-1):
+        verbose=True, is_val=True, processes=-1):
     """Read all ITCKUL object-wise annotations in a given building directory.
     All building-wise data from one epoch are accumulated into a single cloud.
 
@@ -64,7 +64,7 @@ def read_itckul_building(
     processes = available_cpu_count() if processes < 1 else processes
     args_iter = [[r] for r in directories]
     kwargs_iter = {
-        'xyz': xyz, 'rgb': rgb, 'semantic': semantic, 'instance': instance,
+        'xyz': xyz, 'rgb': rgb, 'semantic': semantic, 'instance': instance, 'is_val': is_val,
         'verbose': verbose}
     batch = Batch.from_data_list(starmap_with_kwargs(
         read_itckul_epoch, args_iter, kwargs_iter, processes=processes))
@@ -79,7 +79,7 @@ def read_itckul_building(
 
 
 def read_itckul_epoch(
-        epoch_dir, xyz=True, rgb=True, semantic=True, instance=True,
+        epoch_dir, xyz=True, rgb=True, semantic=True, instance=True, is_val=True,
         verbose=True):
     """Read all object-wise annotations in a given epoch directory.
 
@@ -94,6 +94,9 @@ def read_itckul_epoch(
         Whether semantic labels should be saved in the output `Data.y`
     :param instance: bool
         Whether instance labels should be saved in the output `Data.y`
+    :param is_val: bool
+        Whether the output `Data.is_val` should carry a boolean label
+        indicating whether they belong to their Area validation split
     :param verbose: bool
         Verbosity
     :return: Data
@@ -105,6 +108,7 @@ def read_itckul_epoch(
     # label
     xyz_list = [] if xyz else None
     rgb_list = [] if rgb else None
+    
     y_list = [] if semantic else None
     o_list = [] if instance else None
 
@@ -139,9 +143,17 @@ def read_itckul_epoch(
     o_data = torch.from_numpy(o_list) if instance else None
 
     y_data = y_data.clamp(max=ITCKUL_NUM_CLASSES)
-    print("sizes:", xyz_data.size(), rgb_data.size(), y_data.size(), o_data.size()) 
+    log.info("sizes:", xyz_data.size(), rgb_data.size(), y_data.size(), o_data.size()) 
     # Store into a Data object
     data = Data(pos=xyz_data, rgb=rgb_data, y=y_data, o=o_data)
+
+    # Add is_val attribute if need be
+    log.warning("VAL INFO:", epoch_dir, str(data.num_nodes))
+    if is_val:
+        #data.is_val = torch.ones(data.num_nodes, dtype=torch.bool) * (
+        #        osp.basename(epoch_dir) in VALIDATION_EPOCHS)
+        data.is_val = torch.ones(data.num_nodes, dtype=torch.bool) * (
+                epoch_dir.split('/')[-1] in VALIDATION_EPOCHS)
     return data
 
 
@@ -219,7 +231,7 @@ class ITCKUL(BaseDataset):
                 f"\nNot supported: automatic download.\n File missing:"+ osp.join(self.root, self._zip_name)+"\n Continue run...\n")
             sys.exit(1)
             
-        print("skip extracting..")
+        log.warning("skip extracting!")
         return
         # Unzip the file and rename it into the `root/raw/` directory. This
         # directory contains the raw Area folders from the zip
@@ -233,7 +245,7 @@ class ITCKUL(BaseDataset):
         """
         return read_itckul_building(
             raw_cloud_path, xyz=True, rgb=True, semantic=True, instance=True,
-            verbose=True)
+            verbose=True, is_val=True)
 
 # This is optional
 #    @property
