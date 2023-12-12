@@ -19,11 +19,11 @@ UNZIP_NAME = "ITC-KUL constructor"
 # Credit: https://github.com/torch-points3d/torch-points3d
 
 VALIDATION_EPOCHS = [
-    "WEEK17RR"]
+    "WEEK17R"]
 
-TRAIN_EPOCHS =  ["WEEK17"]
+TRAIN_EPOCHS =  ["WEEK18"]
 
-TEST_EPOCHS =  ["WEEK17R"]
+TEST_EPOCHS =  ["WEEK17"]
 
 # connects the epoch label to the building dir
 EPOCHS = {
