@@ -14,7 +14,6 @@ from src.utils import available_cpu_count, starmap_with_kwargs, \
 from src.transforms import RoomPosition
 import laspy
 
-
 DIR = osp.dirname(osp.realpath(__file__))
 log = logging.getLogger(__name__)
 
@@ -59,9 +58,10 @@ def read_itckul_building(
     directories = sorted([x for x in glob.glob(search_dir) if osp.isdir(x)])
 
     # Read all epochs of the Building and concatenate point clouds in a Batch (TODO: check if this makes sense!)
-    print('Directories', directories) #debug
+    #print('Directories', directories) #debug
     #print('building dir', building_dir, 'Search dir:', search_dir) #debug
-    processes = available_cpu_count() if processes < 1 else processes
+    processes = 1
+    #processes = available_cpu_count() if processes < 1 else processes
     args_iter = [[r] for r in directories]
     kwargs_iter = {
         'xyz': xyz, 'rgb': rgb, 'semantic': semantic, 'instance': instance, 'is_val': is_val,
@@ -133,7 +133,7 @@ def read_itckul_epoch(
             rgbVal = rgbVal.transpose()
             rgbVal >>= 8  # 8 bit shift to right to correct color values from LAS
             rgb_list.append( np.array(rgbVal, dtype='int16'))
-            # TypeError: can't convert np.ndarray of type numpy.uint16. The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint8, and bool.
+            # The only supported types are: float64, float32, float16, complex64, complex128, int64, int32, int16, int8, uint8, and bool.
 
 
     # Concatenate and convert to torch
@@ -143,17 +143,14 @@ def read_itckul_epoch(
     o_data = torch.from_numpy(o_list) if instance else None
 
     y_data = y_data.clamp(max=ITCKUL_NUM_CLASSES)
-    log.info("sizes:", xyz_data.size(), rgb_data.size(), y_data.size(), o_data.size()) 
     # Store into a Data object
     data = Data(pos=xyz_data, rgb=rgb_data, y=y_data, o=o_data)
 
-    # Add is_val attribute if need be
-    log.warning("VAL INFO:", epoch_dir, str(data.num_nodes))
+    # Add is_val attribute if need be. WARNING: This example produces NAG attribute missing error!
     if is_val:
-        #data.is_val = torch.ones(data.num_nodes, dtype=torch.bool) * (
-        #        osp.basename(epoch_dir) in VALIDATION_EPOCHS)
+    	# if the epoch dir belongs in validation_epochs, is_val= True and has a length of data.num_nodes
         data.is_val = torch.ones(data.num_nodes, dtype=torch.bool) * (
-                epoch_dir.split('/')[-1] in VALIDATION_EPOCHS)
+                epoch_dir.split('/')[-2] in VALIDATION_EPOCHS)
     return data
 
 
@@ -190,7 +187,7 @@ class ITCKUL(BaseDataset):
 
     def __init__(self, *args, fold=5, **kwargs):
         self.fold = fold
-        super().__init__(*args, val_mixed_in_train=True, test_mixed_in_val=True, **kwargs)
+        super().__init__(*args, val_mixed_in_train=False, test_mixed_in_val=False, **kwargs)
 
     @property
     def class_names(self):
