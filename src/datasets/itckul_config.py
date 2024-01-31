@@ -45,6 +45,10 @@ EPOCHS = {
 
 # Credit: https://github.com/torch-points3d/torch-points3d
 
+## TODO VL: expand the label list vs. compress the label list. 
+##Compressing is computationally better! Create a mapping from original labels to computational labels.
+##Expanding is easier and helps to debug! expand the INV_OBJECT_LABEL list to cover all numbers to 255
+
 ITCKUL_NUM_CLASSES = 100
 
 INV_OBJECT_LABEL = {
@@ -56,9 +60,6 @@ INV_OBJECT_LABEL = {
 5: "Stairs",
 6: "Roofs",
 7: "CurtainWalls",
-8: "xxClassEight",
-9: "xxClassNine",
-10: "xxClassTen",
 11: "Ceilings",
 12: "Doors",
 13: "Windows",
@@ -96,7 +97,9 @@ INV_OBJECT_LABEL = {
 64: "Water"    
 }
 
-CLASS_NAMES = [INV_OBJECT_LABEL.get(i, i) for i in range(ITCKUL_NUM_CLASSES)]+ ['ignored']
+#CLASS_NAMES = [INV_OBJECT_LABEL.get(i, i) for i in range(ITCKUL_NUM_CLASSES)]+ ['ignored']
+CLASS_NAMES = [str(INV_OBJECT_LABEL.get(i, str(i))) for i in range(ITCKUL_NUM_CLASSES)] + ['ignored']
+
 
 CLASS_COLORS = np.asarray([
     [233, 229, 107],  # 'structural'   ->  yellow
@@ -122,6 +125,7 @@ CLASS_COLORS = np.asarray([
     [0, 0, 0]])       # unlabelled  -> black
 
 OBJECT_LABEL = {name: i for i, name in INV_OBJECT_LABEL.items()}
+
 
 def object_name_to_label(object_class):
     """Convert from object name to int label. By default, 
